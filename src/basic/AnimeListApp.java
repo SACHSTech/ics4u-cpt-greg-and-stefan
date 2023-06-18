@@ -2,6 +2,7 @@ package basic;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
+import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -15,6 +16,7 @@ import javafx.stage.Stage;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,10 +24,14 @@ import java.util.List;
 public class AnimeListApp extends Application {
 
     private ListView<AnimeData> animeListView;
+    private ListView<AnimeData> filteredListView;
     private ListView<AnimeData> userAnimeListView;
     private List<AnimeData> animeList;
+    private List<AnimeData> filteredAnimeList;
     private List<AnimeData> userAnimeList;
     private PieChart genrePieChart;
+
+    private boolean NSFWToggle = false;
 
     public static void main(String[] args) {
         launch(args);
@@ -35,7 +41,9 @@ public class AnimeListApp extends Application {
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Anime List App");
 
-        ArrayList<AnimeData> animeList = new ArrayList<>(); 
+        ArrayList<AnimeData> animeList = new ArrayList<>();
+        ArrayList<AnimeData> filteredAnimeList = new ArrayList<>();
+
         try (BufferedReader reader = new BufferedReader(new FileReader("src/basic/animesShort.csv"))) {
             String line = reader.readLine();
             for (int i = 0; i < 911; i++) {
@@ -97,19 +105,33 @@ public class AnimeListApp extends Application {
                 System.out.println(animeData.getScore());
                 animeList.add(animeData);
             }
+
+            for (AnimeData anime : animeList){
+                if (!anime.getGenres().contains("Hentai") || !anime.getGenres().contains("Ecchi") || !anime.getGenres().contains("Yaoi") || !anime.getGenres().contains("Yuri") || !anime.getGenres().contains("Harem")) {
+                    filteredAnimeList.add(anime);
+                }
+            }
+            System.out.println("NSFW Filtered");
         } 
         catch (IOException e) {
             e.printStackTrace();
         }
 
         userAnimeList = new ArrayList<>();
-        
         animeListView = new ListView<>();
         animeListView.setItems(FXCollections.observableArrayList(animeList));
         animeListView.setCellFactory(param -> new AnimeListCell());
         animeListView.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> showAnimeDetails(newValue)
         );
+
+        filteredListView = new ListView<>();
+        filteredListView.setItems(FXCollections.observableArrayList(filteredAnimeList));
+        filteredListView.setCellFactory(param -> new AnimeListCell());
+        filteredListView.getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldValue, newValue) -> showAnimeDetails(newValue)
+        );
+
 
         userAnimeListView = new ListView<>();
         userAnimeListView.setItems(FXCollections.observableArrayList(userAnimeList));
@@ -121,11 +143,19 @@ public class AnimeListApp extends Application {
         Button addButton = new Button("Add");
         addButton.setOnAction(e -> addAnimeToUserList());
 
+        Button addButton2 = new Button("NSFW Free");
+        addButton2.setOnAction(e -> NSFWFilter());
+
         TabPane tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         Tab animeListTab = new Tab("Anime List");
-        animeListTab.setContent(animeListView);
+        if (!NSFWToggle) {
+            animeListTab.setContent(animeListView);
+        }
+        else {
+            animeListTab.setContent(filteredListView);
+        }
 
         Tab userAnimeListTab = new Tab("My Anime List");
         userAnimeListTab.setContent(userAnimeListView);
@@ -140,7 +170,7 @@ public class AnimeListApp extends Application {
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
         vbox.setAlignment(Pos.CENTER);
-        vbox.getChildren().addAll(tabPane, addButton);
+        vbox.getChildren().addAll(tabPane, addButton, addButton2);
 
         BorderPane borderPane = new BorderPane();
         borderPane.setCenter(vbox);
@@ -209,6 +239,10 @@ public class AnimeListApp extends Application {
         genrePieChart.setData(FXCollections.observableArrayList(genreData));
     }
 
+    private void NSFWFilter() {
+        NSFWToggle = true;
+    }
+    
     private class AnimeListCell extends ListCell<AnimeData> {
         @Override
         protected void updateItem(AnimeData anime, boolean empty) {
