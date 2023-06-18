@@ -2,10 +2,15 @@ package basic;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -33,6 +38,9 @@ public class AnimeListApp extends Application {
 
     private boolean NSFWToggle = false;
 
+    public Parent createContent() {
+        
+    }
     public static void main(String[] args) {
         launch(args);
     }
@@ -105,19 +113,14 @@ public class AnimeListApp extends Application {
                 System.out.println(animeData.getScore());
                 animeList.add(animeData);
             }
-
-            for (AnimeData anime : animeList){
-                if (!anime.getGenres().contains("Hentai") || !anime.getGenres().contains("Ecchi") || !anime.getGenres().contains("Yaoi") || !anime.getGenres().contains("Yuri") || !anime.getGenres().contains("Harem")) {
-                    filteredAnimeList.add(anime);
-                }
-            }
-            System.out.println("NSFW Filtered");
         } 
+        
         catch (IOException e) {
             e.printStackTrace();
         }
 
         userAnimeList = new ArrayList<>();
+        
         animeListView = new ListView<>();
         animeListView.setItems(FXCollections.observableArrayList(animeList));
         animeListView.setCellFactory(param -> new AnimeListCell());
@@ -132,7 +135,6 @@ public class AnimeListApp extends Application {
                 (observable, oldValue, newValue) -> showAnimeDetails(newValue)
         );
 
-
         userAnimeListView = new ListView<>();
         userAnimeListView.setItems(FXCollections.observableArrayList(userAnimeList));
         userAnimeListView.setCellFactory(param -> new AnimeListCell());
@@ -144,18 +146,13 @@ public class AnimeListApp extends Application {
         addButton.setOnAction(e -> addAnimeToUserList());
 
         Button addButton2 = new Button("NSFW Free");
-        addButton2.setOnAction(e -> NSFWFilter());
+        addButton2.setOnAction(e -> NSFWFilter(animeList, filteredAnimeList));
 
         TabPane tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         Tab animeListTab = new Tab("Anime List");
-        if (!NSFWToggle) {
-            animeListTab.setContent(animeListView);
-        }
-        else {
-            animeListTab.setContent(filteredListView);
-        }
+        animeListTab.setContent(animeListView);
 
         Tab userAnimeListTab = new Tab("My Anime List");
         userAnimeListTab.setContent(userAnimeListView);
@@ -178,6 +175,7 @@ public class AnimeListApp extends Application {
         Scene scene = new Scene(borderPane, 800, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
+        
     }
 
     private void showAnimeDetails(AnimeData anime) {
@@ -239,8 +237,17 @@ public class AnimeListApp extends Application {
         genrePieChart.setData(FXCollections.observableArrayList(genreData));
     }
 
-    private void NSFWFilter() {
+    private ArrayList<AnimeData> NSFWFilter(ArrayList<AnimeData> animeList, ArrayList<AnimeData> filteredAnimeList) {
         NSFWToggle = true;
+        for (AnimeData animeData : animeList) {
+            if (!animeData.getGenres().contains("Hentai") && !animeData.getGenres().contains("Ecchi") && !animeData.getGenres().contains("Yaoi") && !animeData.getGenres().contains("Yuri") && !animeData.getGenres().contains("Harem")) {
+                        filteredAnimeList.add(animeData);
+            }
+        }
+        for (AnimeData animeData : filteredAnimeList) {
+            System.out.println(animeData.getGenres());
+        }
+        return filteredAnimeList;
     }
     
     private class AnimeListCell extends ListCell<AnimeData> {
